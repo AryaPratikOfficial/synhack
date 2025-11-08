@@ -26,7 +26,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const locations = ["Mumbai", "Delhi", "Bangalore", "Nagpur", "Hyderabad"];
+  const locations = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"];
   const degrees = ["B.Tech", "M.Tech", "PhD"];
   const roles = ["Educational", "Designer", "ML Engineer", "Developer", "Data Analyst"];
   const skillOptions = ["Python", "React", "Node.js", "C++", "Machine Learning", "SQL", "JavaScript"];
@@ -68,7 +68,7 @@ function App() {
 
   const fetchProfiles = async (page = 1) => {
     const payload = { ...formData, page };
-    console.log("📦 Sending to backend:", payload);
+    console.log("ðŸ“¦ Sending to backend:", payload);
     setLoading(true);
     setError(null);
 
@@ -82,7 +82,7 @@ function App() {
       if (!response.ok) throw new Error("Failed to connect to backend");
 
       const data = await response.json();
-      console.log("✅ Response from backend:", data);
+      console.log("âœ… Response from backend:", data);
 
       if (data.success && Array.isArray(data.data)) {
         setUsers(data.data);
@@ -92,7 +92,7 @@ function App() {
         setError("No profiles found matching your criteria");
       }
     } catch (err) {
-      console.error("❌ Error:", err);
+      console.error("âŒ Error:", err);
       setError("Unable to connect to server. Please try again later.");
       setUsers([]);
     } finally {
@@ -117,7 +117,7 @@ function App() {
     <div className="main-container">
       {/* LEFT PANEL */}
       <div className="left-panel">
-        <h1 className="title">🔧 Profile Preference Setup</h1>
+        <h1 className="title">Profile Preference Setup</h1>
 
         <form className="form-box" onSubmit={handleSubmit}>
           {/* Location */}
@@ -277,14 +277,14 @@ function App() {
           </div>
 
           <button className="submit-btn neon" type="submit">
-            {loading ? "⏳ Finding..." : "🚀 Find Matches"}
+            {loading ? " Finding..." : " Find Matches"}
           </button>
         </form>
       </div>
 
       {/* RIGHT PANEL */}
       <div className="right-panel">
-        <h2 className="subtitle">📋 Matched Profiles</h2>
+        <h2 className="subtitle"> Matched Profiles</h2>
 
         {error && (
           <div className="error-message">
@@ -315,7 +315,7 @@ function App() {
                     <h3>{profile.name || `Candidate #${index + 1}`}</h3>
                     <p><b>City:</b> {profile.city}</p>
                     <p><b>Experience:</b> {profile.experience_years} yrs</p>
-                    <p><b>CTC Expectation:</b> ₹{profile.ctc_expectation_k}K</p>
+                    <p><b>CTC Expectation:</b> {profile.ctc_expectation_k}K</p>
                     <p className="score">
                       <b>Final Score:</b> {profile.f_composite_score?.toFixed(2)}%
                     </p>
@@ -343,14 +343,14 @@ function App() {
                     onClick={handlePrevPage}
                     className="neon small-btn"
                   >
-                    ⬅ Prev
+                   Prev
                   </button>
                   <button
                     disabled={!pagination.has_next}
                     onClick={handleNextPage}
                     className="neon small-btn"
                   >
-                    Next ➡
+                    Next
                   </button>
                 </div>
               </div>
