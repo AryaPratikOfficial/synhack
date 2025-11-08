@@ -24,13 +24,13 @@ function App() {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const locations = ["Mumbai", "Delhi", "Bangalore", "Nagpur", "Hyderabad"];
   const degrees = ["B.Tech", "M.Tech", "PhD"];
   const roles = ["Educational", "Designer", "ML Engineer", "Developer", "Data Analyst"];
   const skillOptions = ["Python", "React", "Node.js", "C++", "Machine Learning", "SQL", "JavaScript"];
 
-  // ===== HANDLERS =====
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -66,13 +66,11 @@ function App() {
     }));
   };
 
-  // ===== API CALL =====
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const payload = { ...formData };
+  const fetchProfiles = async (page = 1) => {
+    const payload = { ...formData, page };
     console.log("📦 Sending to backend:", payload);
-
     setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch("http://100.71.15.108:5000/api/candidates/score", {
@@ -86,25 +84,38 @@ function App() {
       const data = await response.json();
       console.log("✅ Response from backend:", data);
 
-      // ✅ Correct mapping for backend structure
       if (data.success && Array.isArray(data.data)) {
         setUsers(data.data);
         setPagination(data.pagination || null);
       } else {
         setUsers([]);
+        setError("No profiles found matching your criteria");
       }
-    } catch (error) {
-      console.error("❌ Error:", error);
-      alert("Backend connection failed. Check console or server.");
+    } catch (err) {
+      console.error("❌ Error:", err);
+      setError("Unable to connect to server. Please try again later.");
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ===== UI =====
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    fetchProfiles(1);
+  };
+
+  const handleNextPage = () => {
+    if (pagination?.has_next) fetchProfiles(pagination.page + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (pagination?.has_prev) fetchProfiles(pagination.page - 1);
+  };
+
   return (
     <div className="main-container">
-      {/* ===== LEFT PANEL ===== */}
+      {/* LEFT PANEL */}
       <div className="left-panel">
         <h1 className="title">🔧 Profile Preference Setup</h1>
 
@@ -271,38 +282,77 @@ function App() {
         </form>
       </div>
 
-      {/* ===== RIGHT PANEL ===== */}
+      {/* RIGHT PANEL */}
       <div className="right-panel">
         <h2 className="subtitle">📋 Matched Profiles</h2>
 
+        {error && (
+          <div className="error-message">
+            <p>{error}</p>
+          </div>
+        )}
+
         {loading ? (
-          <div className="placeholder"><p>Loading matches...</p></div>
+          <div className="placeholder">
+            <div className="spinner"></div>
+            <p>Loading matches...</p>
+          </div>
         ) : users.length === 0 ? (
-          <div className="placeholder"><p>No profiles yet. Submit to view matches.</p></div>
+          <div className="placeholder">
+            <p>No profiles yet. Submit to view matches.</p>
+          </div>
         ) : (
           <div>
             <div className="card-container">
-              {users.map((profile, index) => (
-                <div key={index} className="user-card glass-card">
-                  <h3>Candidate #{index + 1}</h3>
-                  <p><b>City:</b> {profile.city}</p>
-                  <p><b>Experience:</b> {profile.experience_years} yrs</p>
-                  <p><b>CTC Expectation:</b> ₹{profile.ctc_expectation_k}K</p>
-                  <p className="score">
-                    <b>Final Score:</b> {profile.f_composite_score?.toFixed(2)}%
-                  </p>
-                  <small>Composite Score: {profile.composite_score?.toFixed(3)}</small>
-                </div>
-              ))}
+              {users.map((profile, index) => {
+                const backendSkills = profile.skills || [];
+                const commonSkills = formData.skills.filter((s) =>
+                  backendSkills.includes(s)
+                );
+
+                return (
+                  <div key={index} className="user-card glass-card">
+                    <h3>{profile.name || `Candidate #${index + 1}`}</h3>
+                    <p><b>City:</b> {profile.city}</p>
+                    <p><b>Experience:</b> {profile.experience_years} yrs</p>
+                    <p><b>CTC Expectation:</b> ₹{profile.ctc_expectation_k}K</p>
+                    <p className="score">
+                      <b>Final Score:</b> {profile.f_composite_score?.toFixed(2)}%
+                    </p>
+                    {commonSkills.length > 0 && (
+                      <div className="skill-tags">
+                        {commonSkills.map((s, i) => (
+                          <span key={i} className="tag highlight">{s}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Pagination Info */}
             {pagination && (
-              <div className="pagination-info">
+              <div className="pagination-controls">
                 <p>
                   Page {pagination.page} of {pagination.total_pages} —{" "}
                   Total {pagination.total_items} profiles
                 </p>
+                <div className="buttons">
+                  <button
+                    disabled={!pagination.has_prev}
+                    onClick={handlePrevPage}
+                    className="neon small-btn"
+                  >
+                    ⬅ Prev
+                  </button>
+                  <button
+                    disabled={!pagination.has_next}
+                    onClick={handleNextPage}
+                    className="neon small-btn"
+                  >
+                    Next ➡
+                  </button>
+                </div>
               </div>
             )}
           </div>
