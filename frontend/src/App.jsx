@@ -31,24 +31,13 @@ function App() {
   const roles = ["Educational", "Designer", "ML Engineer", "Developer", "Data Analyst"];
   const skillOptions = ["Python", "React", "Node.js", "C++", "Machine Learning", "SQL", "JavaScript"];
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleExperienceChange = (type, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      experience: { ...prev.experience, [type]: value },
-    }));
-  };
-
-  const handleCTCChange = (type, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      ctc_range: { ...prev.ctc_range, [type]: value },
-    }));
-  };
-
+  const handleChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleExperienceChange = (type, value) => setFormData((prev) => ({
+    ...prev, experience: { ...prev.experience, [type]: value },
+  }));
+  const handleCTCChange = (type, value) => setFormData((prev) => ({
+    ...prev, ctc_range: { ...prev.ctc_range, [type]: value },
+  }));
   const handleSkillChange = (skill) => {
     setFormData((prev) => {
       const alreadySelected = prev.skills.includes(skill);
@@ -58,32 +47,24 @@ function App() {
       return { ...prev, skills: updatedSkills };
     });
   };
-
-  const handleWeightChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      weights: { ...prev.weights, [field]: parseInt(value) },
-    }));
-  };
+  const handleWeightChange = (field, value) => setFormData((prev) => ({
+    ...prev, weights: { ...prev.weights, [field]: parseInt(value) },
+  }));
 
   const fetchProfiles = async (page = 1) => {
     const payload = { ...formData, page };
-    console.log("ðŸ“¦ Sending to backend:", payload);
+    console.log("📦 Sending to backend:", payload);
     setLoading(true);
     setError(null);
-
     try {
       const response = await fetch("http://100.71.15.108:5000/api/candidates/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!response.ok) throw new Error("Failed to connect to backend");
-
       const data = await response.json();
-      console.log("âœ… Response from backend:", data);
-
+      console.log("✅ Response from backend:", data);
       if (data.success && Array.isArray(data.data)) {
         setUsers(data.data);
         setPagination(data.pagination || null);
@@ -92,7 +73,7 @@ function App() {
         setError("No profiles found matching your criteria");
       }
     } catch (err) {
-      console.error("âŒ Error:", err);
+      console.error("❌ Error:", err);
       setError("Unable to connect to server. Please try again later.");
       setUsers([]);
     } finally {
@@ -100,25 +81,15 @@ function App() {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    fetchProfiles(1);
-  };
-
-  const handleNextPage = () => {
-    if (pagination?.has_next) fetchProfiles(pagination.page + 1);
-  };
-
-  const handlePrevPage = () => {
-    if (pagination?.has_prev) fetchProfiles(pagination.page - 1);
-  };
+  const handleSubmit = (e) => { e.preventDefault(); fetchProfiles(1); };
+  const handleNextPage = () => pagination?.has_next && fetchProfiles(pagination.page + 1);
+  const handlePrevPage = () => pagination?.has_prev && fetchProfiles(pagination.page - 1);
 
   return (
     <div className="main-container">
       {/* LEFT PANEL */}
       <div className="left-panel">
         <h1 className="title">Profile Preference Setup</h1>
-
         <form className="form-box" onSubmit={handleSubmit}>
           {/* Location */}
           <div className="form-group glass">
@@ -284,41 +255,26 @@ function App() {
 
       {/* RIGHT PANEL */}
       <div className="right-panel">
-        <h2 className="subtitle"> Matched Profiles</h2>
+        <h2 className="subtitle">Matched Profiles</h2>
 
-        {error && (
-          <div className="error-message">
-            <p>{error}</p>
-          </div>
-        )}
-
+        {error && <div className="error-message"><p>{error}</p></div>}
         {loading ? (
-          <div className="placeholder">
-            <div className="spinner"></div>
-            <p>Loading matches...</p>
-          </div>
+          <div className="placeholder"><div className="spinner"></div><p>Loading matches...</p></div>
         ) : users.length === 0 ? (
-          <div className="placeholder">
-            <p>No profiles yet. Submit to view matches.</p>
-          </div>
+          <div className="placeholder"><p>No profiles yet. Submit to view matches.</p></div>
         ) : (
           <div>
             <div className="card-container">
               {users.map((profile, index) => {
                 const backendSkills = profile.skills || [];
-                const commonSkills = formData.skills.filter((s) =>
-                  backendSkills.includes(s)
-                );
-
+                const commonSkills = formData.skills.filter((s) => backendSkills.includes(s));
                 return (
                   <div key={index} className="user-card glass-card">
                     <h3>{profile.name || `Candidate #${index + 1}`}</h3>
                     <p><b>City:</b> {profile.city}</p>
                     <p><b>Experience:</b> {profile.experience_years} yrs</p>
                     <p><b>CTC Expectation:</b> {profile.ctc_expectation_k}K</p>
-                    <p className="score">
-                      <b>Final Score:</b> {profile.f_composite_score?.toFixed(2)}%
-                    </p>
+                    <p className="score"><b>Final Score:</b> {profile.f_composite_score?.toFixed(2)}%</p>
                     {commonSkills.length > 0 && (
                       <div className="skill-tags">
                         {commonSkills.map((s, i) => (
@@ -334,8 +290,7 @@ function App() {
             {pagination && (
               <div className="pagination-controls">
                 <p>
-                  Page {pagination.page} of {pagination.total_pages} —{" "}
-                  Total {pagination.total_items} profiles
+                  Page {pagination.page} of {pagination.total_pages} — Total {pagination.total_items} profiles
                 </p>
                 <div className="buttons">
                   <button
@@ -343,7 +298,7 @@ function App() {
                     onClick={handlePrevPage}
                     className="neon small-btn"
                   >
-                   Prev
+                    Prev
                   </button>
                   <button
                     disabled={!pagination.has_next}
@@ -358,6 +313,11 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* ✅ FOOTER */}
+      <footer className="footer">
+        <p>Crafted by <b>Team Dijkstra</b> &copy; 2025</p>
+      </footer>
     </div>
   );
 }
