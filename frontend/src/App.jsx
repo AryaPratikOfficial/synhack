@@ -4,9 +4,10 @@ import "./App.css";
 function App() {
   const [formData, setFormData] = useState({
     location: "",
-    experience: "",
+    experience: { min: "", max: "" },
     degree: "",
     role: "",
+    ctc_range: { min: "5", max: "10" },
     skills: [],
     weights: {
       location: 50,
@@ -14,19 +15,38 @@ function App() {
       degree: 50,
       role: 50,
       skills: 50,
+      ctc_range: 50,
     },
+    page: 1,
+    per_page: 20,
   });
 
-  const [users, setUsers] = useState([]); // right panel data
+  const [users, setUsers] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const locations = ["Mumbai", "Delhi", "Bangalore", "Nagpur", "Hyderabad"];
   const degrees = ["B.Tech", "M.Tech", "PhD"];
   const roles = ["Educational", "Designer", "ML Engineer", "Developer", "Data Analyst"];
   const skillOptions = ["Python", "React", "Node.js", "C++", "Machine Learning", "SQL", "JavaScript"];
 
-  // Input handlers
+  // ===== HANDLERS =====
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleExperienceChange = (type, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      experience: { ...prev.experience, [type]: value },
+    }));
+  };
+
+  const handleCTCChange = (type, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      ctc_range: { ...prev.ctc_range, [type]: value },
+    }));
   };
 
   const handleSkillChange = (skill) => {
@@ -46,121 +66,137 @@ function App() {
     }));
   };
 
+  // ===== API CALL =====
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const payload = { ...formData };
     console.log("📦 Sending to backend:", payload);
 
-    // 🔥 For now, simulate fetched data
-    const mockResponse = [
-      {
-        id: 1,
-        name: "Alice Johnson",
-        location: "Bangalore",
-        role: "ML Engineer",
-        skills: ["Python", "TensorFlow", "SQL"],
-        score: 92,
-      },
-      {
-        id: 2,
-        name: "Rahul Mehta",
-        location: "Delhi",
-        role: "Developer",
-        skills: ["React", "Node.js", "MongoDB"],
-        score: 85,
-      },
-      {
-        id: 3,
-        name: "Sneha Verma",
-        location: "Mumbai",
-        role: "Data Analyst",
-        skills: ["Python", "Excel", "PowerBI"],
-        score: 79,
-      },
-    ];
+    setLoading(true);
 
-    // pretend we fetched from backend
-    setTimeout(() => {
-      setUsers(mockResponse);
-    }, 1000);
-
-    // Later: uncomment this for real backend
-    /*
     try {
-      const res = await fetch("http://localhost:5000/api/search", {
+      const response = await fetch("http://100.71.15.108:5000/api/candidates/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      setUsers(data.users);
+
+      if (!response.ok) throw new Error("Failed to connect to backend");
+
+      const data = await response.json();
+      console.log("✅ Response from backend:", data);
+
+      // ✅ Correct mapping for backend structure
+      if (data.success && Array.isArray(data.data)) {
+        setUsers(data.data);
+        setPagination(data.pagination || null);
+      } else {
+        setUsers([]);
+      }
     } catch (error) {
-      console.error("Error fetching:", error);
+      console.error("❌ Error:", error);
+      alert("Backend connection failed. Check console or server.");
+    } finally {
+      setLoading(false);
     }
-    */
   };
 
+  // ===== UI =====
   return (
     <div className="main-container">
-      {/* LEFT PANEL - Form */}
+      {/* ===== LEFT PANEL ===== */}
       <div className="left-panel">
-        <h1>Profile Preference Form</h1>
+        <h1 className="title">🔧 Profile Preference Setup</h1>
 
         <form className="form-box" onSubmit={handleSubmit}>
           {/* Location */}
-          <div className="form-group">
-            <label>Location:</label>
+          <div className="form-group glass">
+            <label>Location</label>
             <select
               value={formData.location}
               onChange={(e) => handleChange("location", e.target.value)}
               required
             >
-              <option value="">--Select Location--</option>
+              <option value="">Select location...</option>
               {locations.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc}
-                </option>
+                <option key={loc}>{loc}</option>
               ))}
             </select>
-            <div className="slider-row">
-              <label>Weight: {formData.weights.location}%</label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={formData.weights.location}
-                onChange={(e) => handleWeightChange("location", e.target.value)}
-              />
-            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={formData.weights.location}
+              onChange={(e) => handleWeightChange("location", e.target.value)}
+            />
+            <small>Weight: {formData.weights.location}%</small>
           </div>
 
           {/* Experience */}
-          <div className="form-group">
-            <label>Experience (Years):</label>
-            <input
-              type="number"
-              min="0"
-              placeholder="Enter years"
-              value={formData.experience}
-              onChange={(e) => handleChange("experience", e.target.value)}
-              required
-            />
-            <div className="slider-row">
-              <label>Weight: {formData.weights.experience}%</label>
+          <div className="form-group glass">
+            <label>Experience Range (Years)</label>
+            <div className="exp-range">
               <input
-                type="range"
+                type="number"
                 min="0"
-                max="100"
-                value={formData.weights.experience}
-                onChange={(e) => handleWeightChange("experience", e.target.value)}
+                placeholder="From"
+                value={formData.experience.min}
+                onChange={(e) => handleExperienceChange("min", e.target.value)}
+                required
+              />
+              <span className="to-text">to</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="To"
+                value={formData.experience.max}
+                onChange={(e) => handleExperienceChange("max", e.target.value)}
+                required
               />
             </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={formData.weights.experience}
+              onChange={(e) => handleWeightChange("experience", e.target.value)}
+            />
+            <small>Weight: {formData.weights.experience}%</small>
+          </div>
+
+          {/* CTC Range */}
+          <div className="form-group glass">
+            <label>CTC Range (LPA)</label>
+            <div className="exp-range">
+              <input
+                type="number"
+                min="0"
+                placeholder="Min"
+                value={formData.ctc_range.min}
+                onChange={(e) => handleCTCChange("min", e.target.value)}
+              />
+              <span className="to-text">to</span>
+              <input
+                type="number"
+                min="0"
+                placeholder="Max"
+                value={formData.ctc_range.max}
+                onChange={(e) => handleCTCChange("max", e.target.value)}
+              />
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={formData.weights.ctc_range}
+              onChange={(e) => handleWeightChange("ctc_range", e.target.value)}
+            />
+            <small>Weight: {formData.weights.ctc_range}%</small>
           </div>
 
           {/* Skills */}
-          <div className="form-group">
-            <label>Skills:</label>
+          <div className="form-group glass">
+            <label>Skills</label>
             <div className="skills-list">
               {skillOptions.map((skill) => (
                 <label key={skill} className="skill-item">
@@ -173,98 +209,103 @@ function App() {
                 </label>
               ))}
             </div>
-            <div className="slider-row">
-              <label>Weight: {formData.weights.skills}%</label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={formData.weights.skills}
-                onChange={(e) => handleWeightChange("skills", e.target.value)}
-              />
-            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={formData.weights.skills}
+              onChange={(e) => handleWeightChange("skills", e.target.value)}
+            />
+            <small>Weight: {formData.weights.skills}%</small>
           </div>
 
           {/* Degree */}
-          <div className="form-group">
-            <label>Degree:</label>
+          <div className="form-group glass">
+            <label>Degree</label>
             <select
               value={formData.degree}
               onChange={(e) => handleChange("degree", e.target.value)}
               required
             >
-              <option value="">--Select Degree--</option>
+              <option value="">Select degree...</option>
               {degrees.map((deg) => (
-                <option key={deg} value={deg}>
-                  {deg}
-                </option>
+                <option key={deg}>{deg}</option>
               ))}
             </select>
-            <div className="slider-row">
-              <label>Weight: {formData.weights.degree}%</label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={formData.weights.degree}
-                onChange={(e) => handleWeightChange("degree", e.target.value)}
-              />
-            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={formData.weights.degree}
+              onChange={(e) => handleWeightChange("degree", e.target.value)}
+            />
+            <small>Weight: {formData.weights.degree}%</small>
           </div>
 
           {/* Role */}
-          <div className="form-group">
-            <label>Role:</label>
+          <div className="form-group glass">
+            <label>Role</label>
             <select
               value={formData.role}
               onChange={(e) => handleChange("role", e.target.value)}
               required
             >
-              <option value="">--Select Role--</option>
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
+              <option value="">Select role...</option>
+              {roles.map((r) => (
+                <option key={r}>{r}</option>
               ))}
             </select>
-            <div className="slider-row">
-              <label>Weight: {formData.weights.role}%</label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={formData.weights.role}
-                onChange={(e) => handleWeightChange("role", e.target.value)}
-              />
-            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={formData.weights.role}
+              onChange={(e) => handleWeightChange("role", e.target.value)}
+            />
+            <small>Weight: {formData.weights.role}%</small>
           </div>
 
-          <button type="submit" className="submit-btn">
-            Search Profiles
+          <button className="submit-btn neon" type="submit">
+            {loading ? "⏳ Finding..." : "🚀 Find Matches"}
           </button>
         </form>
       </div>
 
-      {/* RIGHT PANEL - User Cards */}
+      {/* ===== RIGHT PANEL ===== */}
       <div className="right-panel">
-        <h2>Matched Profiles</h2>
+        <h2 className="subtitle">📋 Matched Profiles</h2>
 
-        {users.length === 0 ? (
-          <p className="no-data">No profiles yet. Submit form to fetch.</p>
+        {loading ? (
+          <div className="placeholder"><p>Loading matches...</p></div>
+        ) : users.length === 0 ? (
+          <div className="placeholder"><p>No profiles yet. Submit to view matches.</p></div>
         ) : (
-          users.map((user) => (
-            <div key={user.id} className="user-card">
-              <h3>{user.name}</h3>
-              <p><b>Role:</b> {user.role}</p>
-              <p><b>Location:</b> {user.location}</p>
-              <p><b>Score:</b> {user.score}%</p>
-              <div className="skill-tags">
-                {user.skills.map((skill, i) => (
-                  <span key={i} className="tag">{skill}</span>
-                ))}
-              </div>
+          <div>
+            <div className="card-container">
+              {users.map((profile, index) => (
+                <div key={index} className="user-card glass-card">
+                  <h3>Candidate #{index + 1}</h3>
+                  <p><b>City:</b> {profile.city}</p>
+                  <p><b>Experience:</b> {profile.experience_years} yrs</p>
+                  <p><b>CTC Expectation:</b> ₹{profile.ctc_expectation_k}K</p>
+                  <p className="score">
+                    <b>Final Score:</b> {profile.f_composite_score?.toFixed(2)}%
+                  </p>
+                  <small>Composite Score: {profile.composite_score?.toFixed(3)}</small>
+                </div>
+              ))}
             </div>
-          ))
+
+            {/* Pagination Info */}
+            {pagination && (
+              <div className="pagination-info">
+                <p>
+                  Page {pagination.page} of {pagination.total_pages} —{" "}
+                  Total {pagination.total_items} profiles
+                </p>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
