@@ -11,7 +11,7 @@ import os
 import re
 
 # Import scoring functions from score_candidates module
-from score_candidates import process_candidates, calculate_composite_score, f_composite_score
+from backend.score_candidates import process_candidates, calculate_composite_score, f_composite_score
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for cross-origin requests
