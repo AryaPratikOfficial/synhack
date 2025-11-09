@@ -16,6 +16,7 @@ from backend.score_candidates import process_candidates, calculate_composite_sco
 app = Flask(__name__)
 CORS(app)  # Enable CORS for cross-origin requests
 
+
 # Default dataset path
 DEFAULT_DATASET_PATH = 'candidates.csv'
 
