@@ -57,7 +57,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://100.71.15.108:5000/api/candidates/score", {
+      const response = await fetch("https://synhack-mj47.onrender.com/api/candidates/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
